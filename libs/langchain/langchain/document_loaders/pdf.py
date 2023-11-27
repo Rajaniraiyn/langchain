@@ -172,6 +172,43 @@ class PyPDFLoader(BasePDFLoader):
         yield from self.parser.parse(blob)
 
 
+class PyPDFBinaryLoader(BasePDFLoader):
+    """Load `PDF` using pypdf from binary data into list of documents.
+
+    Loader chunks by page and stores page numbers in metadata.
+    """
+
+    def __init__(
+        self,
+        bin: bytearray,
+        file_name: str = "bin.pdf",
+        password: Optional[Union[str, bytes]] = None,
+        extract_images: bool = False,
+    ) -> None:
+        """Initialize with binary data"""
+        try:
+            import pypdf
+        except ImportError:
+            raise ImportError(
+                "pypdf package not found, please install it with " "`pip install pypdf`"
+            )
+        self.bin = bin
+        self.file_name = file_name
+        self.parser = PyPDFParser(password=password, extract_images=extract_images)
+
+    def load(self) -> List[Document]:
+        """Load given path as pages."""
+        return list(self.lazy_load())
+
+    def lazy_load(
+        self,
+    ) -> Iterator[Document]:
+        """Lazy load given path as pages."""
+        bin_io = BytesIO(self.bin)
+        blob = Blob.from_data(bin_io.read(), path=self.file_name)
+        yield from self.parser.parse(blob)
+
+
 class PyPDFium2Loader(BasePDFLoader):
     """Load `PDF` using `pypdfium2` and chunks at character level."""
 
